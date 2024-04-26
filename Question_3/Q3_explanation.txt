@@ -1,0 +1,44 @@
+The following LUA code:
+
+function do_sth_with_PlayerParty(playerId, membername)
+	player = Player(playerId)
+	local party = player:getParty()
+
+	for k,v in pairs(party:getMembers()) do
+	if v == Player(membername) then
+		party:removeMember(Player(membername))
+		end
+	end
+end
+
+Can be fixed/improved as follows:
+- properly scope the variables within the function to be local
+- create the targetPlayer outside the loop to avoid redundant object creation
+- use 'ipairs' to iterate over the party members since the order matters
+- fixed incorrect comparison
+
+The improved/fixed code would be as follows:
+
+function do_sth_with_PlayerParty(playerId, membername)
+	local player = Player(playerId)
+	local party = player:getParty()
+
+	-- create a player object outside of loop
+	local targetPlayer = Player(membername);
+	
+	if not targetPlayer then
+		print("Player not found")
+		return
+	end
+	
+	for k,v member in ipairs(party:getMembers()) do
+		-- compare member name to given membername
+		if member:getName() == membername then
+			party:removeMember(member)
+			print(membername .. " removed from party.")
+			return
+		end
+	end
+	
+	print(membername .. " is not in the party.")
+end

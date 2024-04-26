@@ -1,0 +1,70 @@
+The following C++ Code:
+
+void Game::addItemToPlayer(const std::string& recipient, uint16_t itemId)
+{
+	Player* player = g_game.getPlayerByName(recipient);
+	
+	if (!player)
+	{
+		player = new Player(nullptr);
+		if (!IOLoginData::loadPlayerByName(player, recipient)) 
+		{
+			return;
+		}
+	}
+
+	Item* item = Item::CreateItem(itemId);
+	
+	if (!item) 
+	{
+		return;
+	}
+
+	g_game.internalAddItem(player->getInbox(), item, INDEX_WHEREEVER, FLAG_NOLIMIT);
+
+	if (player->isOffline()) 
+	{
+		IOLoginData::savePlayer(player);
+	}
+	
+}
+
+The source of the memory leak here is that the newly created player is not properly deallocated when it cannot be loaded
+
+
+To fix any potential memory leaks with this function, you could implement it as follows:
+
+void Game::addItemToPlayer(const std::string& recipient, uint16_t itemId)
+{
+	Player* player = g_game.getPlayerByName(recipient);
+	
+	if (!player)
+	{
+		player = new Player(nullptr);
+		if (!IOLoginData::loadPlayerByName(player, recipient)) 
+		{
+			delete player;
+			return;
+		}
+	}
+
+	Item* item = Item::CreateItem(itemId);
+	
+	if (!item) 
+	{
+		if (!g_game.getPlayerByName(recipient)) // Check if player was created inside this function
+            delete player; // Deallocate the player object if item creation fails
+		return;
+	}
+
+	g_game.internalAddItem(player->getInbox(), item, INDEX_WHEREEVER, FLAG_NOLIMIT);
+
+	if (player->isOffline()) 
+	{
+		IOLoginData::savePlayer(player);
+	}
+	
+	if (!g_game.getPlayerByName(recipient)) // Check if player was created inside this function
+            delete player; // Deallocate the player object if item creation fails
+	
+}

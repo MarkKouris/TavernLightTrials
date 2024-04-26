@@ -1,0 +1,51 @@
+The following LUA code:
+
+function printSmallGuildNames(memberCount)
+	-- this method is supposed to print names of all guilds that have less than memberCount max members
+	local selectGuildQuery = "SELECT name FROM guilds WHERE max_members < %d;"
+	local resultId = db.storeQuery(string.format(selectGuildQuery, memberCount))
+	local guildName = result.getString("name")
+	print(guildName)
+end
+
+Can be improved as follows:
+
+1) handling data base results properly
+2) There is no error handling for if the database query fails or returns an empty results set. 
+3) the string format is a potential sql vulnerability. 
+
+I would implement the code as such:
+
+function printSmallGuildNames(memberCount)
+	--print names of all guilds that have less than memberCount max members
+	local selectGuildQuery = "SELECT name FROM guilds WHERE max_members < %d;"
+	local resultId = db.storeQuery(selectGuildQuery, memberCount)
+	
+	if not resultId then
+		print("Failed to execute database query")
+		return
+	end
+
+	local guildNames = {} --table to store guild names
+	
+	repeat
+		local row = resultId.getNext()
+		if row then
+			local guildName = row:getString("name")
+			table.insert(guildNames, guildName)
+		end
+	until not row
+	
+	resultId:free()
+	
+	--print all guild names
+	for _, name in ipairs(guildNames) do
+		print(name)
+	end
+end
+
+My changes include:
+- replaced the direct string interpolation with a parameterized query to mitigate SQL injection vulnerabilities
+- added error handling to check if the query execution fails or returns an empty result set. 
+- added proper iteration
+- introduced the table 'guildNames' to store the fetched guild names before printing them out.

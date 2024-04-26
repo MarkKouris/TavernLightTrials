@@ -1,0 +1,36 @@
+The following LUA code:
+
+local function releaseStorage(player)
+	player:setStorageValue(1000, -1)
+	end
+
+function onLogout(player)
+	if player:getStorageValue(1000) == 1 then
+		addEvent(releaseStorage, 1000, player)
+	end
+	return true
+end
+
+Can be fixed or improved as followed:
+
+1) verify that player is a valid object before performing operations on it
+2) the comparison value in releaseStorage is set to -1, but we check for 1 in onLogout. 
+
+Here are the improvements implemented to the code:
+
+local function releaseStorage(player)
+	if not player then
+        return false  -- Ensure a valid player object
+    else player:setStorageValue(1000,-1)
+	end
+
+function onLogout(player)
+	if not player then
+		return false	-- Ensure player obj is valid
+	end
+	
+	if player:getStorageValue(1000) == -1 then --fixed comparison
+		addEvent(releaseStorage, 100, player)
+	end
+	return true
+end
